@@ -9,47 +9,40 @@ namespace ConfigSwitcher
 {
   public class Switcher
   {
-    public enum TargetType
-    {
-      Dev,
-      UAT,
-      Prod,
-      Ignore,
-      Unknown
-    }
+
     static void Main(string[] args)
     {
       var prog = new Switcher();
       prog.GetTargetType("AKDEV");
     }
 
-    public TargetType GetTargetType(string identifier)
+    public SecurityContext GetTargetType(string identifier)
     {
 
       if (identifier.Contains("\\Template"))
       {
-        return TargetType.Ignore;
+        return SecurityContext.Ignore;
       }
 
       if (identifier.Contains("\\AirAsia") || identifier.Contains("\\MT") || identifier.Contains("\\Multi") || identifier.ToLowerInvariant().Contains("\\prod_") || identifier.Contains("\\Production\\"))
       {
         if (!identifier.Contains("UAT") && !identifier.Contains("DEV") && !identifier.Contains("Demo"))
         {
-          return TargetType.Prod;
+          return SecurityContext.Prod;
         }
       }
 
       if (identifier.Contains("UAT"))
       {
-        return TargetType.UAT;
+        return SecurityContext.Uat;
       }
 
       if (identifier.Contains("\\Test\\Deployments") || identifier.ToUpperInvariant().Contains("DEV") || identifier.Contains("Demo"))
       {
-        return TargetType.Dev;
+        return SecurityContext.Dev;
       }
 
-      return TargetType.Unknown;
+      return SecurityContext.Unknown;
     }
 
     public string AddTargetIfMissing(string current, string target)
@@ -69,6 +62,34 @@ namespace ConfigSwitcher
       }
 
       return rootElement.ToString();
+    }
+
+    public string GetFriendlyName(string fileName)
+    {
+      if (fileName.Contains("\\Template"))
+      {
+        return "Unused";
+      }
+
+      if (fileName.Contains("\\AirAsia") || fileName.Contains("\\MT") || fileName.Contains("\\Multi") || fileName.ToLowerInvariant().Contains("\\prod_") || fileName.Contains("\\Production\\"))
+      {
+        if (!fileName.Contains("UAT") && !fileName.Contains("DEV") && !fileName.Contains("Demo"))
+        {
+          return SecurityContext.Prod;
+        }
+      }
+
+      if (fileName.Contains("UAT"))
+      {
+        return SecurityContext.Uat;
+      }
+
+      if (fileName.Contains("\\Test\\Deployments") || fileName.ToUpperInvariant().Contains("DEV") || fileName.Contains("Demo"))
+      {
+        return SecurityContext.Dev;
+      }
+
+      return SecurityContext.Unknown;
     }
   }
 }
