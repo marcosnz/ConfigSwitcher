@@ -7,68 +7,57 @@ using System.Xml.Linq;
 
 namespace ConfigSwitcher
 {
-  public class Switcher
-  {
-    public enum TargetType
+    public class Switcher
     {
-      Dev,
-      UAT,
-      Prod,
-      Ignore,
-      Unknown
-    }
-    static void Main(string[] args)
-    {
-      var prog = new Switcher();
-      prog.GetTargetType("AKDEV");
-    }
-
-    public TargetType GetTargetType(string identifier)
-    {
-
-      if (identifier.Contains("\\Template"))
-      {
-        return TargetType.Ignore;
-      }
-
-      if (identifier.Contains("\\AirAsia") || identifier.Contains("\\MT") || identifier.Contains("\\Multi") || identifier.ToLowerInvariant().Contains("\\prod_") || identifier.Contains("\\Production\\"))
-      {
-        if (!identifier.Contains("UAT") && !identifier.Contains("DEV") && !identifier.Contains("Demo"))
+        public enum SecurityLevel
         {
-          return TargetType.Prod;
+            /// <summary>Developer level.</summary>
+            Dev,
+
+            /// <summary>UAT level.</summary>
+            Uat,
+
+            /// <summary>Production level.</summary>
+            Prod,
+
+            /// <summary>Known but ignoring.</summary>
+            Ignore,
         }
-      }
+        static void Main(string[] args)
+        {
+            var prog = new Switcher();
+            prog.GetTargetType("AKDEV");
+        }
 
-      if (identifier.Contains("UAT"))
-      {
-        return TargetType.UAT;
-      }
+        public SecurityLevel GetTargetType(string fileName)
+        {
+            fileName = fileName.ToLowerInvariant();
+            fileName = fileName.Replace("\\dev\\", "\\");
+            if (fileName.Contains("\\template"))
+            {
+                return SecurityLevel.Ignore;
+            }
 
-      if (identifier.Contains("\\Test\\Deployments") || identifier.ToUpperInvariant().Contains("DEV") || identifier.Contains("Demo"))
-      {
-        return TargetType.Dev;
-      }
+            if (fileName.Contains("\\airasia") || fileName.Contains("\\mt") || fileName.Contains("\\multi") || fileName.ToLowerInvariant().Contains("\\prod_") || fileName.Contains("\\production\\"))
+            {
+                if (!fileName.Contains("uat") && !fileName.Contains("dev") && !fileName.Contains("demo"))
+                {
+                    return SecurityLevel.Prod;
+                }
+            }
 
-      return TargetType.Unknown;
+            if (fileName.Contains("uat"))
+            {
+                return SecurityLevel.Uat;
+            }
+
+            if (fileName.Contains("\\test\\deployments") || fileName.Contains("dev") || fileName.Contains("demo"))
+            {
+                return SecurityLevel.Dev;
+            }
+
+            throw new Exception(string.Format("Unable to determine if this file is DEV/UAT/PROD: '{0}", fileName));
+        }
+
     }
-
-    public string AddTargetIfMissing(string current, string target)
-    {
-      var rootElement = XElement.Parse(current);
-      XNamespace ns = rootElement.GetDefaultNamespace();
-      //if (! element.Descendants("target")
-      //XNamespace ns = XNamespace.Get("http://schemas.microsoft.com/developer/msbuild/2003");
-      var groupElement = rootElement.Element(ns + "PropertyGroup");
-      if (groupElement != null)
-      {
-        groupElement.AddFirst(new XElement(ns + "target", target));
-      }
-      else
-      {
-        throw new Exception("PropertyGroup element not found");
-      }
-
-      return rootElement.ToString();
-    }
-  }
 }
