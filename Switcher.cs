@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace ConfigSwitcher
@@ -16,41 +12,41 @@ namespace ConfigSwitcher
             prog.GetTargetType("AKDEV");
         }
 
-        public SecurityContext GetTargetType(string identifier)
+        public SecurityLevel GetTargetType(string fileName)
         {
 
-            if (identifier.Contains("\\Template") || identifier.Contains("\\USDemo\\"))
+            fileName = fileName.Replace("\\dev\\", "\\");
+
+            if (fileName.Contains("\\Template") || fileName.Contains("\\USDemo\\") || fileName.Contains("WSUAT") || fileName.Contains("Test\\Deployments\\MerlotDev"))
             {
-                return SecurityContext.Ignore;
+                return SecurityLevel.Ignore;
             }
 
-            if (identifier.Contains("\\AirAsia") || identifier.Contains("\\MT") || identifier.Contains("\\Multi") || identifier.ToLowerInvariant().Contains("\\prod_") || identifier.Contains("\\Production\\"))
+            if (fileName.Contains("\\AirAsia") || fileName.Contains("\\MT") || fileName.Contains("\\Multi") || fileName.ToLowerInvariant().Contains("\\prod_") || fileName.Contains("\\Production\\"))
             {
-                if (!identifier.Contains("UAT") && !identifier.Contains("DEV") && !identifier.Contains("Demo"))
+                if (!fileName.Contains("UAT") && !fileName.Contains("DEV") && !fileName.Contains("Demo"))
                 {
-                    return SecurityContext.Prod;
+                    return SecurityLevel.Prod;
                 }
             }
 
-            if (identifier.Contains("UAT"))
+            if (fileName.Contains("UAT"))
             {
-                return SecurityContext.Uat;
+                return SecurityLevel.Uat;
             }
 
-            if (identifier.Contains("\\Test\\Deployments") || identifier.ToUpperInvariant().Contains("DEV") || identifier.Contains("Demo"))
+            if (fileName.Contains("\\Test\\Deployments") || fileName.ToUpperInvariant().Contains("DEV") || fileName.Contains("Demo"))
             {
-                return SecurityContext.Dev;
+                return SecurityLevel.Dev;
             }
 
-            return SecurityContext.Unknown;
+            throw new Exception(string.Format("Unable to determine if this file is DEV/UAT/PROD: '{0}", fileName));
         }
 
         public string AddTargetIfMissing(string current, string target)
         {
             var rootElement = XElement.Parse(current);
             XNamespace ns = rootElement.GetDefaultNamespace();
-            //if (! element.Descendants("target")
-            //XNamespace ns = XNamespace.Get("http://schemas.microsoft.com/developer/msbuild/2003");
             var groupElement = rootElement.Element(ns + "PropertyGroup");
             if (groupElement != null)
             {
@@ -106,8 +102,6 @@ namespace ConfigSwitcher
                         name = "XY Nas Air";
                         break;
                 }
-
-                //return identifier;
             }
 
             bool ismt = identifier.StartsWith("MT") || identifier == "Multi";
@@ -161,16 +155,6 @@ namespace ConfigSwitcher
                 }
             }
 
-            name += GetFriendlyNameSuffix(identifier);
-            if (ismt && !name.Contains("UAT") && !name.Contains("Dev") && !name.Contains("Demo"))
-            {
-                name += " MT";
-            }
-            return name;
-        }
-
-        private static string GetFriendlyNameSuffix(string identifier)
-        {
             string suffix = string.Empty;
             if (identifier.Contains("UAT"))
             {
@@ -214,7 +198,30 @@ namespace ConfigSwitcher
                 suffix += " Optimiser";
             }
 
-            return suffix;
+            name += suffix;
+            if (ismt && !name.Contains("UAT") && !name.Contains("Dev") && !name.Contains("Demo"))
+            {
+                name += " MT";
+            }
+
+            return name;
+        }
+
+        public string AddOriginalNameIfMissing(string current, string originalName)
+        {
+            var rootElement = XElement.Parse(current);
+            XNamespace ns = rootElement.GetDefaultNamespace();
+            var groupElement = rootElement.Element(ns + "PropertyGroup");
+            if (groupElement != null)
+            {
+                groupElement.Add(new XElement(ns + "originalName", originalName));
+            }
+            else
+            {
+                throw new Exception("PropertyGroup element not found");
+            }
+
+            return rootElement.ToString();
         }
     }
 }
