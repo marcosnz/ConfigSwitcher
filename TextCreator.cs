@@ -92,6 +92,35 @@ namespace ConfigSwitcher
       Zap,
       Down,
       Up,
+      Fred,
+      Mary,
+      Dave,
+      John,
+      Might,
+      Power,
+      Electric,
+      Light,
+      Dark,
+      Night,
+      Sun,
+      Moon,
+      Planet,
+      Earth,
+      Soil,
+      Plant,
+      Wheat,
+      Barley,
+      Remote,
+      Radio,
+      Star,
+      Mercury,
+      Venus,
+      Mars,
+      Jupiter,
+      Saturn,
+      Uranus,
+      Neptune,
+
       MaxValue
     }
 
@@ -101,6 +130,10 @@ namespace ConfigSwitcher
     private static List<string> _alreadyUsed = ReadAlreadyUsed();
     private static readonly string FileName = Assembly.GetExecutingAssembly().Location + ".txt";
 
+    /// <summary>
+    /// Reads in a list of text strings that have previously been used - so we can avooid duplicating.
+    /// </summary>
+    /// <returns>A list of already used strings</returns>
     private static List<string> ReadAlreadyUsed()
     {
       List<string> alreadyUsed = new List<string>();
@@ -120,12 +153,31 @@ namespace ConfigSwitcher
       return alreadyUsed;
     }
 
-    public string CreateText(int length = 12, IEnumerable<string> dontDuplicate = null)
+    /// <summary>
+    /// Creates some pseudo random text made up of at least 2 words and a number and a special character
+    /// </summary>
+    /// <param name="minimumLength">The minimum length</param>
+    /// <param name="maximumLength">The maximum length</param>
+    /// <param name="dontDuplicate">List of past used text that shouldn't be used again</param>
+    /// <returns>Some pseudo random text</returns>
+    public string CreateText(int minimumLength = 12, int? maximumLength = null, IEnumerable<string> dontDuplicate = null)
     {
-      if (length < 8 || length > 15)
+      maximumLength = maximumLength ?? minimumLength;
+      if (minimumLength < 8 || minimumLength > 15)
       {
-        throw new ArgumentOutOfRangeException("length", length, "Can only generate text between 8 and 15 characters in length");
+        throw new ArgumentOutOfRangeException("minimumLength", minimumLength, "Can only generate text between 8 and 15 characters in length");
       }
+
+      if (maximumLength < 8 || maximumLength > 15)
+      {
+        throw new ArgumentOutOfRangeException("maximumLength", maximumLength, "Can only generate text between 8 and 15 characters in length");
+      }
+
+      if (minimumLength > maximumLength)
+      {
+        throw new ArgumentOutOfRangeException("maximumLength", maximumLength, "Maximum length must be greater than minimum length.");
+      }
+
       string text;
       const int maxRetry = 1000;
       int retryCount = 0;
@@ -137,7 +189,7 @@ namespace ConfigSwitcher
 
       do
       {
-        text = GetText(length);
+        text = GetText(minimumLength, maximumLength.Value);
         retryCount++;
         exists = _alreadyUsed.Contains(text);
       }
@@ -152,6 +204,10 @@ namespace ConfigSwitcher
       return text;
     }
 
+    /// <summary>
+    /// Writes the text to a file so we can check if it has been used next time
+    /// </summary>
+    /// <param name="text">The text to write</param>
     private static void WriteTextToFile(string text)
     {
       try
@@ -163,45 +219,42 @@ namespace ConfigSwitcher
         // ne'er mind
       }
     }
-
-    private static string GetText(int length)
+    /// <summary>
+    /// Gets a string of text that is between the min and max values in lenght.
+    /// </summary>
+    /// <param name="minimumLength">The minimum length</param>
+    /// <param name="maximumLength">The maximum length</param>
+    /// <returns>A string of text</returns>
+    private static string GetText(int minimumLength, int maximumLength)
     {
-      string firstWord = null;
-      string secondWord = null;
-      int number = 0;
-      string specialCharacter = null;
+      string text = String.Empty;
 
-      int extraNeeded = -1;
-      while (extraNeeded != 0)
+      bool correctLength = false;
+      while (!correctLength)
       {
-        List<int> randomNumbers = GetRandomNumbers((int)Words.MaxValue, (int)Words.MaxValue, 10);
-        firstWord = ((Words)randomNumbers[0]).ToString();
-        secondWord = ((Words)randomNumbers[1]).ToString();
-        number = randomNumbers[2];
-        specialCharacter = SpecialCharacters.Substring(number, 1);
-        int currentLength = (firstWord.Length + secondWord.Length + 2);
+        int length;
+        text = String.Empty;
+        do
+        {
+          text += GetRandomWord();
+          length = text.Length + 2;
+        } while (length < minimumLength);
 
-        extraNeeded = length - currentLength;
+        correctLength = minimumLength <= length && length <= maximumLength;
       }
 
-      string text = firstWord + secondWord + number + specialCharacter; //// + extraText;
+      var number = RandomGenerator.Next(10);
+      var specialCharacter = SpecialCharacters.Substring(number, 1);
+      text += number + specialCharacter;
       return text;
     }
-
-    private static List<int> GetRandomNumbers(params int[] maxForEach)
+    /// <summary>
+    /// Gets a word from the list in a random manner
+    /// </summary>
+    /// <returns>A word</returns>
+    private static string GetRandomWord()
     {
-      List<int> numbers = new List<int>(maxForEach.Length);
-      while (numbers.Count < maxForEach.Length)
-      {
-        int number = RandomGenerator.Next(maxForEach[numbers.Count]);
-        if (!numbers.Contains(number))
-        {
-          numbers.Add(number);
-        }
-      }
-
-      return numbers;
+      return ((Words)RandomGenerator.Next((int)Words.MaxValue)).ToString();
     }
-
   }
 }
