@@ -1,5 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ConfigSwitcher.Test
@@ -15,10 +15,10 @@ namespace ConfigSwitcher.Test
       List<string> list = new List<string>();
       for (int i = 0; i < 1000; i++)
       {
-        string result = sut.CreateText();
+        string result = sut.CreateText(dontDuplicate: list);
         Assert.IsNotNull(result);
         Assert.AreEqual(12, result.Length);
-        System.Diagnostics.Debug.WriteLine(result);
+        Debug.WriteLine(result);
         list.Add(result);
         CollectionAssert.AllItemsAreUnique(list, "{0} items in list", list.Count);
       }
@@ -27,10 +27,15 @@ namespace ConfigSwitcher.Test
     public void TestMethod2()
     {
       TextCreator sut = new TextCreator();
-      string result = sut.CreateText(10);
+      string result = sut.CreateText(8);
       Assert.IsNotNull(result);
-      Assert.AreEqual(10, result.Length);
-      System.Diagnostics.Debug.WriteLine(result);
+      Assert.AreEqual(8, result.Length);
+      Debug.WriteLine(result);
+
+      result = sut.CreateText(15);
+      Assert.IsNotNull(result);
+      Assert.AreEqual(15, result.Length);
+      Debug.WriteLine(result);
     }
   }
 }
